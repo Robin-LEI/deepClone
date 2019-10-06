@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+	</head>
+	<body>
+		<h2>浅拷贝</h2>
+		<ul>
+			<li>Object.assign()</li>
+			<li>for(let key in obj) {}</li>
+		</ul>
+		<br>
+		<h2>深拷贝</h2>
+		<ul>
+			<li>JSON.parse(JSON.stringify())有缺陷，不能拷贝通过Object.defineProperty()新增的属性，对于正则与function的属性也不能拷贝</li>
+		</ul>
+		<script type="text/javascript">
+			var obj = {
+				a:1,
+				b:2,
+				reg: /^\d$/igm,
+				func: function() {
+					console.log('我是一个function');
+				},
+				nu: null,
+				bool: true,
+				c: {
+					d:10,
+					unde: undefined,
+					flag: false,
+					e: 20,
+					arr: [1,2,3],
+					date: new Date('2019'),
+					set f(value) {
+						this.a = value
+					},
+					get f() {
+						return this.a
+					}
+				},
+				set f(value) {
+					this.a = value
+				},
+				get f() {
+					return this.a
+				}
+			}
+			Object.defineProperty(obj, 'x', {
+				writable: true,
+				value: '我是一个未知数x'
+			})
+			let clone = {}
+			function deepClone(target, source) {
+				// 拿到source对象的所有的属性名称
+				let attrNames = Object.getOwnPropertyNames(source)
+				for(let i = 0; i < attrNames.length; i++) {
+					// 拿到每一个属性的属性描述符
+					let desc = Object.getOwnPropertyDescriptor(source, attrNames[i])
+					// 先判断desc.value的值是不是一个对象
+					if (typeof desc.value === 'object' && desc.value !== null) {
+						let obj = null
+						if (Object.prototype.toString.call(desc.value) === '[object Array]') {
+							obj = new Array()
+						} else if (Object.prototype.toString.call(desc.value) === '[object Date]') {
+							obj = new Date(desc.value)
+						} else if (Object.prototype.toString.call(desc.value) === '[object RegExp]') {
+							obj = new RegExp(desc.value)
+						} else {
+							obj = {}
+						}
+						Object.defineProperty(target, attrNames[i], {
+							configurable: desc.configurable,
+							enumerable: desc.enumerable,
+							writable: desc.writable,
+							value: obj
+						})
+						deepClone(obj, desc.value)
+					} else {
+						Object.defineProperty(target, attrNames[i], desc)
+					}
+				}
+			}
+			
+			console.log('obj', obj);
+			deepClone(clone, obj)
+			obj.c.f = 100
+			obj.c.arr[1] = 1000
+			obj.c.date = new Date('2020')
+			obj.nu = {name: 'robin'},
+			obj.c.unde = null
+			obj.x = '我是一个未知数y'
+			console.log('clone', clone);
+			clone.func()
+		</script>
+	</body>
+</html>
